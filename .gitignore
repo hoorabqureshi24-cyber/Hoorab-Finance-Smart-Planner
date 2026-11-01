@@ -1,0 +1,22 @@
+# Database
+finance.db
+*.db
+
+# Backup files
+app_backup.py
+
+# Old database connection file
+db.py
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment and secret files
+.env
+venv/
+.venv/
+
+# Local test files
+test_db.py
+dashboard_backup.html

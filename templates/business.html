@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Planner | Hoorab Finance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .business-container {
+            width: min(1150px, 92%);
+            margin: 30px auto 60px;
+        }
+
+        .business-box {
+            background: #0d1c34;
+            border: 1px solid #203b5d;
+            border-radius: 18px;
+            padding: 26px;
+            margin-bottom: 24px;
+            color: #f5f8ff;
+        }
+
+        .business-box h2 {
+            margin-bottom: 12px;
+        }
+
+        .business-description {
+            color: #a8bad5;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .business-fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .business-fields label {
+            display: block;
+            color: #dbe8ff;
+            margin-bottom: 8px;
+        }
+
+        .business-fields input,
+        .business-fields select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #294768;
+            border-radius: 9px;
+            background: #091525;
+            color: white;
+            font-size: 15px;
+        }
+
+        .business-action {
+            display: inline-block;
+            border: none;
+            border-radius: 9px;
+            padding: 13px 22px;
+            margin-top: 20px;
+            background: #00dda8;
+            color: #061528;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .business-action:hover {
+            background: #35d9ff;
+        }
+
+        .business-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        .idea-card {
+            background: #122642;
+            border: 1px solid #294768;
+            border-radius: 14px;
+            padding: 20px;
+            min-width: 0;
+        }
+
+        .idea-card h3 {
+            color: #35d9ff;
+            margin-bottom: 10px;
+        }
+
+        .idea-card p {
+            color: #c6d5ea;
+            line-height: 1.65;
+            margin: 8px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .idea-card .idea-profit {
+            color: #00dda8;
+            font-size: 19px;
+            font-weight: 700;
+            margin-top: 14px;
+        }
+
+        .idea-card .idea-warning {
+            color: #ffd479;
+            font-size: 13px;
+        }
+
+        .business-message {
+            margin-top: 18px;
+            line-height: 1.7;
+            color: #00dda8;
+        }
+
+        .business-chart-wrap {
+            width: 100%;
+            min-height: 280px;
+        }
+
+        .business-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .business-stat {
+            background: #0d1c34;
+            border: 1px solid #203b5d;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .business-stat p {
+            color: #a8bad5;
+            margin-bottom: 10px;
+        }
+
+        .business-stat h2 {
+            color: #00dda8;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 650px) {
+            .business-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .business-box {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <a class="logo" href="/">Hoorab <span>Finance</span></a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/budget">Budget & Saving</a>
+        <a href="/business">Business Planner</a>
+        <a href="/simulator">Simulator</a>
+        <a href="/voice">Voice Assistant</a>
+    </div>
+</nav>
+
+<header class="page-header">
+    <span class="eyebrow">SMART BUSINESS PLANNING</span>
+    <h1>Business <span class="gradient-text">Planner</span></h1>
+    <p>Enter your budget and discover business ideas that may fit it.</p>
+</header>
+
+<main class="business-container">
+
+    <!-- BUDGET BASED BUSINESS IDEAS -->
+
+    <section class="business-box">
+        <h2>💡 Find a Business for Your Budget</h2>
+        <p class="business-description">
+            Enter your available investment, select a business category
+            and generate ideas with estimated startup costs and monthly
+            financial projections.
+        </p>
+
+        <form id="ideaForm">
+            <div class="business-fields">
+
+                <div>
+                    <label for="availableBudget">Available Budget (PKR)</label>
+                    <input type="number" id="availableBudget"
+                           min="1" step="1" placeholder="e.g. 100000" required>
+                </div>
+
+                <div>
+                    <label for="businessCategory">Business Category</label>
+                    <select id="businessCategory">
+                        <option value="all">Any suitable business</option>
+                        <option value="online">Online Business</option>
+                        <option value="food">Food Business</option>
+                        <option value="clothing">Clothing / Boutique</option>
+                        <option value="services">Service Business</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="businessSetup">Business Setup</label>
+                    <select id="businessSetup">
+                        <option value="home">Home-based</option>
+                        <option value="online">Online only</option>
+                        <option value="shop">Shop-based</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <button class="business-action" type="submit">
+                Generate Business Ideas →
+            </button>
+        </form>
+
+        <p id="ideaMessage" class="business-message" role="status"
+           aria-live="polite"></p>
+
+        <div id="ideaResults" class="business-results"></div>
+    </section>
+
+    <!-- BUSINESS CALCULATOR -->
+
+    <section class="business-box">
+        <h2>📊 Monthly Business Profit Calculator</h2>
+        <p class="business-description">
+            Already have a business idea? Enter your expected monthly
+            revenue and costs to calculate estimated profit.
+        </p>
+
+        <div class="business-fields">
+            <div>
+                <label for="businessName">Business Name</label>
+                <input type="text" id="businessName"
+                       placeholder="e.g. Online Store">
+            </div>
+
+            <div>
+                <label for="revenue">Monthly Revenue (PKR)</label>
+                <input type="number" id="revenue" min="0"
+                       step="any" placeholder="e.g. 80000">
+            </div>
+
+            <div>
+                <label for="productCost">Product / Service Costs (PKR)</label>
+                <input type="number" id="productCost" min="0"
+                       step="any" placeholder="e.g. 30000">
+            </div>
+
+            <div>
+                <label for="otherCost">Other Monthly Expenses (PKR)</label>
+                <input type="number" id="otherCost" min="0"
+                       step="any" placeholder="e.g. 15000">
+            </div>
+        </div>
+
+        <button class="business-action" id="calculateButton" type="button">
+            Calculate Profit
+        </button>
+
+        <p id="businessResult" class="business-message"
+           role="status" aria-live="polite">
+            Enter your figures to calculate estimated profit.
+        </p>
+
+        <div class="business-stats">
+            <div class="business-stat">
+                <p>Monthly Revenue</p>
+                <h2 id="revenueDisplay">Rs. 0</h2>
+            </div>
+
+            <div class="business-stat">
+                <p>Total Monthly Costs</p>
+                <h2 id="costDisplay">Rs. 0</h2>
+            </div>
+
+            <div class="business-stat">
+                <p>Estimated Net Profit / Loss</p>
+                <h2 id="profitDisplay">Rs. 0</h2>
+            </div>
+
+            <div class="business-stat">
+                <p>Profit Margin</p>
+                <h2 id="marginDisplay">0%</h2>
+            </div>
+        </div>
+
+        <div class="business-chart-wrap">
+            <canvas id="businessChart"></canvas>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>© 2026 <span>Hoorab Finance</span> | Smart Financial Planning</p>
+</footer>
+
+<script>
+"use strict";
+
+const money = new Intl.NumberFormat("en-PK", {
+    maximumFractionDigits: 0
+});
+
+function formatRs(amount) {
+    return "Rs. " + money.format(amount);
+}
+
+/*
+ These are illustrative planning assumptions, not verified
+ local market quotations or guaranteed returns.
+*/
+
+const businessIdeas = [
+    {
+        name: "Online Clothing Store",
+        category: "clothing",
+        setup: ["home", "online"],
+        cost: 45000,
+        monthly: 20000,
+        revenue: 45000,
+        description: "Sell selected clothing items through social media."
+    },
+    {
+        name: "Home-Based Bakery",
+        category: "food",
+        setup: ["home"],
+        cost: 35000,
+        monthly: 18000,
+        revenue: 40000,
+        description: "Prepare cakes, cupcakes and made-to-order snacks."
+    },
+    {
+        name: "Freelance Design Service",
+        category: "services",
+        setup: ["home", "online"],
+        cost: 15000,
+        monthly: 5000,
+        revenue: 25000,
+        description: "Offer design services if you already have suitable equipment."
+    },
+    {
+        name: "Social Media Services",
+        category: "services",
+        setup: ["home", "online"],
+        cost: 10000,
+        monthly: 4000,
+        revenue: 20000,
+        description: "Help small businesses prepare posts and manage their pages."
+    },
+    {
+        name: "Online Gift Shop",
+        category: "online",
+        setup: ["home", "online"],
+        cost: 30000,
+        monthly: 12000,
+        revenue: 30000,
+        description: "Sell gift boxes and customised gift items."
+    },
+    {
+        name: "Home Food Orders",
+        category: "food",
+        setup: ["home"],
+        cost: 25000,
+        monthly: 15000,
+        revenue: 35000,
+        description: "Take advance orders for a small menu of home-cooked food."
+    },
+    {
+        name: "Small Clothing Shop",
+        category: "clothing",
+        setup: ["shop"],
+        cost: 180000,
+        monthly: 45000,
+        revenue: 100000,
+        description: "Sell clothing from a small rented retail space."
+    },
+    {
+        name: "Small Takeaway Counter",
+        category: "food",
+        setup: ["shop"],
+        cost: 200000,
+        monthly: 60000,
+        revenue: 130000,
+        description: "Run a small takeaway operation; permissions and equipment may add costs."
+    },
+    {
+        name: "Online Reselling",
+        category: "online",
+        setup: ["home", "online"],
+        cost: 20000,
+        monthly: 10000,
+        revenue: 28000,
+        description: "Resell products in small quantities after checking supplier prices."
+    },
+    {
+        name: "Printing and Design Service",
+        category: "services",
+        setup: ["shop"],
+        cost: 150000,
+        monthly: 35000,
+        revenue: 80000,
+        description: "Provide printing and design services with suitable equipment."
+    }
+];
+
+const ideaForm = document.getElementById("ideaForm");
+const ideaResults = document.getElementById("ideaResults");
+const ideaMessage = document.getElementById("ideaMessage");
+
+ideaForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const budget = Number(
+        document.getElementById("availableBudget").value
+    );
+    const category = document.getElementById("businessCategory").value;
+    const setup = document.getElementById("businessSetup").value;
+
+    ideaResults.replaceChildren();
+    ideaMessage.textContent = "";
+
+    if (!Number.isFinite(budget) || budget <= 0) {
+        ideaMessage.textContent = "Please enter a budget greater than zero.";
+        return;
+    }
+
+    const matchingIdeas = businessIdeas.filter(function(idea) {
+        const categoryMatches =
+            category === "all" || idea.category === category;
+        const setupMatches = idea.setup.includes(setup);
+        return categoryMatches && setupMatches && idea.cost <= budget;
+    });
+
+    if (matchingIdeas.length === 0) {
+        ideaMessage.textContent =
+            "No matching idea was found within this budget and setup. " +
+            "Try another category or setup, or enter a larger budget.";
+        return;
+    }
+
+    ideaMessage.textContent =
+        matchingIdeas.length + " idea(s) fit your selected budget " +
+        "using our illustrative assumptions.";
+
+    matchingIdeas.forEach(function(idea) {
+        const reserve = budget - idea.cost;
+        const estimatedProfit = idea.revenue - idea.monthly;
+        const card = document.createElement("article");
+        card.className = "idea-card";
+
+        function addLine(text, className) {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = text;
+            if (className) paragraph.className = className;
+            card.appendChild(paragraph);
+        }
+
+        const heading = document.createElement("h3");
+        heading.textContent = idea.name;
+        card.appendChild(heading);
+
+        addLine(idea.description);
+        addLine("Estimated startup cost: " + formatRs(idea.cost));
+        addLine("Estimated monthly expenses: " + formatRs(idea.monthly));
+        addLine("Illustrative monthly revenue: " + formatRs(idea.revenue));
+        addLine("Budget remaining after setup: " + formatRs(reserve));
+        addLine(
+            "Illustrative monthly profit / loss: " +
+            formatRs(estimatedProfit),
+            "idea-profit"
+        );
+        addLine(
+            "These figures are assumptions, not market quotes or a guarantee of profit.",
+            "idea-warning"
+        );
+
+        const useButton = document.createElement("button");
+        useButton.type = "button";
+        useButton.className = "business-action";
+        useButton.textContent = "Use in Profit Calculator";
+
+        useButton.addEventListener("click", function() {
+            document.getElementById("businessName").value = idea.name;
+            document.getElementById("revenue").value = idea.revenue;
+            document.getElementById("productCost").value =
+                Math.max(0, idea.monthly - 5000);
+            document.getElementById("otherCost").value =
+                Math.min(5000, idea.monthly);
+            calculateProfit();
+            document.getElementById("businessName").scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        });
+
+        card.appendChild(useButton);
+        ideaResults.appendChild(card);
+    });
+});
+
+let businessChart = null;
+
+function calculateProfit() {
+    const name = document.getElementById("businessName").value.trim();
+    const revenueField = document.getElementById("revenue").value;
+    const productField = document.getElementById("productCost").value;
+    const otherField = document.getElementById("otherCost").value;
+
+    const result = document.getElementById("businessResult");
+
+    if (
+        !name ||
+        revenueField === "" ||
+        productField === "" ||
+        otherField === ""
+    ) {
+        result.style.color = "#ffd479";
+        result.textContent = "Please enter a business name and all three amounts.";
+        return;
+    }
+
+    const revenue = Number(revenueField);
+    const productCost = Number(productField);
+    const otherCost = Number(otherField);
+
+    if (
+        ![revenue, productCost, otherCost].every(Number.isFinite) ||
+        revenue < 0 || productCost < 0 || otherCost < 0
+    ) {
+        result.style.color = "#ff7777";
+        result.textContent = "Amounts must be valid non-negative numbers.";
+        return;
+    }
+
+    const totalCost = productCost + otherCost;
+    const profit = revenue - totalCost;
+    const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+    document.getElementById("revenueDisplay").textContent =
+        formatRs(revenue);
+    document.getElementById("costDisplay").textContent =
+        formatRs(totalCost);
+
+    const profitDisplay = document.getElementById("profitDisplay");
+    profitDisplay.textContent = formatRs(profit);
+    profitDisplay.style.color = profit >= 0 ? "#00dda8" : "#ff7777";
+
+    document.getElementById("marginDisplay").textContent =
+        margin.toFixed(1) + "%";
+
+    result.style.color = profit >= 0 ? "#00dda8" : "#ff7777";
+    result.textContent = profit >= 0
+        ? name + ": estimated monthly profit is " + formatRs(profit) + "."
+        : name + ": estimated monthly loss is " +
+          formatRs(Math.abs(profit)) + ".";
+
+    const chartData = {
+        labels: ["Revenue", "Product Costs", "Other Expenses", "Profit / Loss"],
+        datasets: [{
+            label: "Amount (PKR)",
+            data: [revenue, productCost, otherCost, profit],
+            backgroundColor: [
+                "#3984ff",
+                "#35d9ff",
+                "#9060ff",
+                profit >= 0 ? "#00dda8" : "#ff7777"
+            ],
+            borderRadius: 7
+        }]
+    };
+
+    if (businessChart) {
+        businessChart.data = chartData;
+        businessChart.update();
+    } else {
+        businessChart = new Chart(
+            document.getElementById("businessChart"),
+            {
+                type: "bar",
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: "#f5f8ff" }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: "#a8bad5" },
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: "#a8bad5",
+                                callback: function(value) {
+                                    return "Rs. " + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+    }
+}
+
+document.getElementById("calculateButton").addEventListener(
+    "click", calculateProfit
+);
+</script>
+
+</body>
+</html>

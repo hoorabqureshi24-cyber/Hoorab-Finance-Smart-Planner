@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Hoorab Finance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="logo" href="/">Hoorab <span>Finance</span></a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/dashboard" class="active">Dashboard</a>
+        <a href="/budget">Budget & Saving</a>
+        <a href="/business">Business Planner</a>
+        <a href="/simulator">Simulator</a>
+        <a href="/voice">Voice Assistant</a>
+    </div>
+</nav>
+
+<div class="dashboard-layout">
+
+    <aside class="dashboard-sidebar">
+        <h3>MAIN MENU</h3>
+
+        <a href="/dashboard" class="active">
+            <span>▦</span> Dashboard
+        </a>
+
+        <a href="/budget">
+            <span>💰</span> Budget & Saving
+        </a>
+
+        <a href="/business">
+            <span>📊</span> Business Planner
+        </a>
+
+        <a href="/simulator">
+            <span>⚡</span> Budget Simulator
+        </a>
+
+        <a href="/voice">
+            <span>🎙️</span> Voice Assistant
+        </a>
+
+        <a href="/#features">
+            <span>⌂</span> Home
+        </a>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="page-header">
+            <span class="eyebrow">YOUR FINANCIAL OVERVIEW</span>
+            <h1>Welcome to Your <span class="gradient-text">Dashboard</span></h1>
+            <p>Track your income, expenses and savings in one place.</p>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <p>Total Income</p>
+                <h2 id="income">Rs. 0</h2>
+                <span class="stat-icon">↗</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Expenses</p>
+                <h2 id="expenses">Rs. 0</h2>
+                <span class="stat-icon">↘</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Savings</p>
+                <h2 id="savings">Rs. 0</h2>
+                <span class="stat-icon">✦</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Remaining Balance</p>
+                <h2 id="balance">Rs. 0</h2>
+                <span class="stat-icon">◈</span>
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <div class="panel">
+                <h2>Income vs Expenses</h2>
+                <p>Your financial comparison</p>
+                <canvas id="financeChart"></canvas>
+            </div>
+
+            <div class="panel">
+                <h2>Savings Overview</h2>
+                <p>See how much of your income remains.</p>
+                <canvas id="savingsChart"></canvas>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading">
+                <h2>Quick <span class="gradient-text">Actions</span></h2>
+                <p>Choose what you want to manage today.</p>
+            </div>
+
+            <div class="feature-grid">
+                <a class="feature-card" href="/budget">
+                    <div class="feature-icon">💰</div>
+                    <h3>Budget & Saving</h3>
+                    <p>Manage your income, expenses and savings goals.</p>
+                    <span class="feature-link">Open Budget →</span>
+                </a>
+
+                <a class="feature-card" href="/business">
+                    <div class="feature-icon">📊</div>
+                    <h3>Business Planner</h3>
+                    <p>Plan business costs, revenue and profit.</p>
+                    <span class="feature-link">Open Planner →</span>
+                </a>
+
+                <a class="feature-card" href="/simulator">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Budget Simulator</h3>
+                    <p>Test a budget and check your spending limits.</p>
+                    <span class="feature-link">Open Simulator →</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<footer>
+    <p>© 2026 <span>Hoorab Finance</span> | Smart Financial Planning</p>
+</footer>
+
+<script>
+const income = Number(localStorage.getItem("financeIncome")) || 0;
+const expenses = Number(localStorage.getItem("financeExpenses")) || 0;
+const savings = Math.max(0, income - expenses);
+
+document.getElementById("income").textContent =
+    "Rs. " + income.toLocaleString();
+
+document.getElementById("expenses").textContent =
+    "Rs. " + expenses.toLocaleString();
+
+document.getElementById("savings").textContent =
+    "Rs. " + savings.toLocaleString();
+
+document.getElementById("balance").textContent =
+    "Rs. " + (income - expenses).toLocaleString();
+
+new Chart(document.getElementById("financeChart"), {
+    type: "bar",
+    data: {
+        labels: ["Income", "Expenses"],
+        datasets: [{
+            label: "Amount (Rs.)",
+            data: [income, expenses],
+            backgroundColor: ["#00dda8", "#3984ff"],
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                labels: { color: "#f5f8ff" }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: "#a8bad5" },
+                grid: { display: false }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: "#a8bad5" }
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById("savingsChart"), {
+    type: "doughnut",
+    data: {
+        labels: ["Savings", "Expenses"],
+        datasets: [{
+            data: [savings, expenses],
+            backgroundColor: ["#00dda8", "#3984ff"],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                labels: { color: "#f5f8ff" }
+            }
+        }
+    }
+});
+</script>
+
+</body>
+</html>

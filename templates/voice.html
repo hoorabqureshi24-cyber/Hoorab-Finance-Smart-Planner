@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoorab Finance - AI Voice Assistant</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #081321;
+            color: #e8f1f8;
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 20px 7%;
+            background: #0d1c2d;
+            border-bottom: 1px solid #20354a;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: bold;
+            color: #43e0b0;
+        }
+
+        nav a {
+            color: #c5d5e4;
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 14px;
+        }
+
+        nav a:hover {
+            color: #43e0b0;
+        }
+
+        .page {
+            max-width: 850px;
+            margin: 45px auto;
+            padding: 0 18px;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .heading h1 {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .heading p {
+            color: #9fb2c5;
+            line-height: 1.6;
+        }
+
+        .chat-card {
+            background: #101f31;
+            border: 1px solid #233c50;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 15px 45px #00000030;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px;
+            border-bottom: 1px solid #233c50;
+        }
+
+        .ai-avatar {
+            display: grid;
+            place-items: center;
+            width: 43px;
+            height: 43px;
+            border-radius: 14px;
+            background: #173e3a;
+            color: #43e0b0;
+            font-size: 22px;
+        }
+
+        .chat-header h2 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 12px;
+            color: #43e0b0;
+        }
+
+        #chatMessages {
+            height: 390px;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 13px 15px;
+            border-radius: 14px;
+            line-height: 1.6;
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: #1a2d42;
+            color: #e8f1f8;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: #087f68;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-footer {
+            padding: 15px;
+            background: #0c1929;
+            border-top: 1px solid #233c50;
+        }
+
+        #chatStatus {
+            min-height: 18px;
+            margin: 0 0 10px 4px;
+            color: #8da6bb;
+            font-size: 12px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        #chatInput {
+            flex: 1;
+            min-width: 0;
+            height: 48px;
+            border-radius: 12px;
+            padding: 0 14px;
+            border: 1px solid #294157;
+            background: #142438;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #chatInput:focus {
+            border-color: #43e0b0;
+        }
+
+        #chatInput::placeholder {
+            color: #8297ab;
+        }
+
+        .icon-button {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            border: 1px solid #2a465b;
+            border-radius: 13px;
+            background: #172a3e;
+            color: #43e0b0;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .icon-button:hover {
+            background: #21443f;
+            border-color: #43e0b0;
+            transform: translateY(-1px);
+        }
+
+        .send-button {
+            background: #14a783;
+            border-color: #14a783;
+            color: #ffffff;
+        }
+
+        .send-button:hover {
+            background: #0d8c6e;
+        }
+
+        .icon-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .icon-button svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+
+        .bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .hint {
+            font-size: 11px;
+            color: #8297ab;
+            line-height: 1.5;
+        }
+
+        #clearChat {
+            border: none;
+            background: transparent;
+            color: #43e0b0;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 6px;
+        }
+
+        #clearChat:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            nav {
+                padding: 16px;
+            }
+
+            nav a {
+                margin-left: 8px;
+                font-size: 12px;
+            }
+
+            .page {
+                margin: 28px auto;
+            }
+
+            .heading h1 {
+                font-size: 25px;
+            }
+
+            #chatMessages {
+                height: 350px;
+                padding: 14px;
+            }
+
+            .message {
+                max-width: 92%;
+            }
+
+            .icon-button {
+                width: 42px;
+                height: 44px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="brand">Hoorab Finance</div>
+
+        <div>
+            <a href="/">Home</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/budget">Budget</a>
+            <a href="/voice">AI Assistant</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <main class="page">
+
+        <div class="heading">
+            <h1>AI Voice Assistant</h1>
+            <p>
+                Ask questions about budgeting, savings, expenses
+                and business planning.
+            </p>
+        </div>
+
+        <section class="chat-card">
+
+            <div class="chat-header">
+                <div class="ai-avatar">✦</div>
+
+                <div>
+                    <h2>Finance AI Assistant</h2>
+                    <p>● Ready to help</p>
+                </div>
+            </div>
+
+            <div id="chatMessages" aria-live="polite">
+                <div class="message bot-message">
+                    Hello! Welcome to Hoorab Finance. You can type a
+                    question or use the microphone to ask about your
+                    budget, savings or expenses.
+                </div>
+            </div>
+
+            <div class="chat-footer">
+
+                <p id="chatStatus" role="status">
+                    Ready to help.
+                </p>
+
+                <form id="chatForm" class="input-row">
+
+                    <input
+                        type="text"
+                        id="chatInput"
+                        placeholder="Ask your finance question..."
+                        autocomplete="off"
+                        aria-label="Your question"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="icon-button"
+                        id="micButton"
+                        aria-label="Start voice input"
+                        title="Speak your message"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+                            <rect x="9" y="3" width="6" height="12" rx="3"></rect>
+                            <path d="M5 11a7 7 0 0 0 14 0"></path>
+                            <path d="M12 18v3"></path>
+                            <path d="M9 21h6"></path>
+                        </svg>
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="icon-button send-button"
+                        id="sendButton"
+                        aria-label="Send message"
+                        title="Send message"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+                            <path d="M12 19V5"></path>
+                            <path d="m5 12 7-7 7 7"></path>
+                        </svg>
+                    </button>
+
+                </form>
+
+                <div class="bottom-row">
+                    <span class="hint">
+                        Microphone permission may be required.
+                    </span>
+
+                    <button type="button" id="clearChat">
+                        Clear chat
+                    </button>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const chatMessages = document.getElementById("chatMessages");
+        const micButton = document.getElementById("micButton");
+        const sendButton = document.getElementById("sendButton");
+        const chatStatus = document.getElementById("chatStatus");
+        const clearChat = document.getElementById("clearChat");
+
+        let recognition = null;
+        let isListening = false;
+        let isSending = false;
+
+        function addMessage(message, sender) {
+            const element = document.createElement("div");
+
+            element.classList.add("message");
+            element.classList.add(
+                sender === "user" ? "user-message" : "bot-message"
+            );
+
+            // textContent prevents AI/user text from being treated as HTML.
+            element.textContent = message;
+            chatMessages.appendChild(element);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function setMicrophoneIcon(listening) {
+            if (listening) {
+                micButton.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="currentColor"
+                         width="20" height="20" aria-hidden="true">
+                        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    </svg>`;
+                micButton.setAttribute("aria-label", "Stop voice input");
+                micButton.title = "Stop listening";
+            } else {
+                micButton.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         width="20" height="20" aria-hidden="true">
+                        <rect x="9" y="3" width="6" height="12" rx="3"></rect>
+                        <path d="M5 11a7 7 0 0 0 14 0"></path>
+                        <path d="M12 18v3"></path>
+                        <path d="M9 21h6"></path>
+                    </svg>`;
+                micButton.setAttribute("aria-label", "Start voice input");
+                micButton.title = "Speak your message";
+            }
+        }
+
+        function speakAnswer(answer) {
+            if (!("speechSynthesis" in window)) return;
+
+            window.speechSynthesis.cancel();
+
+            const speech = new SpeechSynthesisUtterance(answer);
+            speech.lang = "en-US";
+            speech.rate = 1;
+
+            window.speechSynthesis.speak(speech);
+        }
+
+        async function sendMessage(message) {
+            const question = message.trim();
+
+            if (!question || isSending) return;
+
+            addMessage(question, "user");
+            chatInput.value = "";
+            chatStatus.textContent = "AI is thinking...";
+            sendButton.disabled = true;
+            isSending = true;
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: question })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || "The AI request failed."
+                    );
+                }
+
+                if (!data.reply) {
+                    throw new Error("The AI returned an empty response.");
+                }
+
+                addMessage(data.reply, "bot");
+                chatStatus.textContent = "AI reply received.";
+
+                speakAnswer(data.reply);
+
+            } catch (error) {
+                console.error("Chat error:", error);
+
+                addMessage(
+                    "Sorry, I could not get a reply. " +
+                    error.message +
+                    " Please check that you are logged in and the Flask server and API settings are correct.",
+                    "bot"
+                );
+
+                chatStatus.textContent =
+                    "Request failed. Check the server and API settings.";
+
+            } finally {
+                sendButton.disabled = false;
+                isSending = false;
+                chatInput.focus();
+            }
+        }
+
+        chatForm.addEventListener("submit", function(event) {
+            event.preventDefault();
+            sendMessage(chatInput.value);
+        });
+
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = "en-US";
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                isListening = true;
+                setMicrophoneIcon(true);
+                chatStatus.textContent = "Listening... Speak now.";
+            };
+
+            recognition.onresult = function(event) {
+                const spokenMessage =
+                    event.results[0][0].transcript;
+
+                chatInput.value = spokenMessage;
+                chatStatus.textContent = "Sending voice message...";
+                sendMessage(spokenMessage);
+            };
+
+            recognition.onerror = function(event) {
+                chatStatus.textContent =
+                    "Voice error: " + event.error +
+                    ". Check microphone permission and browser support.";
+            };
+
+            recognition.onend = function() {
+                isListening = false;
+                setMicrophoneIcon(false);
+            };
+
+            micButton.addEventListener("click", function() {
+                if (isListening) {
+                    recognition.stop();
+                    return;
+                }
+
+                try {
+                    recognition.start();
+                } catch (error) {
+                    chatStatus.textContent =
+                        "Could not start microphone. Try again.";
+                }
+            });
+
+        } else {
+            micButton.disabled = true;
+            micButton.title = "Voice input is not supported in this browser";
+            chatStatus.textContent =
+                "Voice input is not supported by this browser. Try Chrome.";
+        }
+
+        clearChat.addEventListener("click", function() {
+            if (recognition && isListening) {
+                recognition.stop();
+            }
+
+            if ("speechSynthesis" in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            chatMessages.replaceChildren();
+
+            addMessage(
+                "Hello! Welcome to Hoorab Finance. Ask me about budgeting, savings, expenses or business planning.",
+                "bot"
+            );
+
+            chatStatus.textContent = "Chat cleared. Ready to help!";
+        });
+    </script>
+
+</body>
+</html>

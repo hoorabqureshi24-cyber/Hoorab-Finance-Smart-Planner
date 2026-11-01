@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Hoorab Finance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="auth-container">
+        <h1>Welcome Back</h1>
+        <p>Login to your Hoorab Finance account</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <p>{{ message }}</p>
+    {% endfor %}
+{% endwith %}
+
+        <form action="/login" method="POST">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email"
+                   placeholder="Enter your email" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password"
+                   placeholder="Enter your password" required>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <p>Don't have an account?
+            <a href="/register">Create Account</a>
+        </p>
+
+        <a href="/">Back to Home</a>
+    </div>
+</body>
+</html>

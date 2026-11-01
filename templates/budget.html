@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget & Saving | Hoorab Finance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="logo" href="/">Hoorab <span>Finance</span></a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/budget">Budget & Saving</a>
+        <a href="/business">Business Planner</a>
+        <a href="/simulator">Simulator</a>
+        <a href="/voice">Voice Assistant</a>
+    </div>
+</nav>
+
+<header class="page-header">
+    <span class="eyebrow">SMART MONEY MANAGEMENT</span>
+    <h1>Budget & <span class="gradient-text">Saving</span></h1>
+    <p>Plan your monthly income, control expenses and achieve your savings goals.</p>
+</header>
+
+<section class="stats-grid">
+    <div class="stat-card">
+        <p>Monthly Income</p>
+        <h2 id="totalIncome">Rs. 0</h2>
+    </div>
+    <div class="stat-card">
+        <p>Total Expenses</p>
+        <h2 id="totalExpenses">Rs. 0</h2>
+    </div>
+    <div class="stat-card">
+        <p>Available Balance</p>
+        <h2 id="availableBalance">Rs. 0</h2>
+    </div>
+    <div class="stat-card">
+        <p>Savings Goal</p>
+        <h2 id="goalDisplay">Rs. 0</h2>
+    </div>
+</section>
+
+<section class="dashboard-grid">
+    <div class="form-card">
+        <h2>💰 Set Your Budget</h2>
+        <p style="color:#a8bad5; margin-bottom:20px">
+            Enter your monthly financial details.
+        </p>
+
+        <form id="budgetForm">
+            <div class="form-group">
+                <label for="incomeInput">Monthly Income (Rs.)</label>
+                <input type="number" id="incomeInput" min="0" step="any" required>
+            </div>
+
+            <div class="form-group">
+                <label for="expenseInput">Monthly Expenses (Rs.)</label>
+                <input type="number" id="expenseInput" min="0" step="any" required>
+            </div>
+
+            <div class="form-group">
+                <label for="goalInput">Savings Goal (Rs.)</label>
+                <input type="number" id="goalInput" min="0" step="any" required>
+            </div>
+
+            <button class="btn btn-primary" type="submit">
+                Save Budget
+            </button>
+        </form>
+
+        <p id="budgetMessage" role="status" style="margin-top:18px"></p>
+    </div>
+
+    <div class="panel">
+        <h2>📈 Budget Analysis</h2>
+        <p>See how your income is divided.</p>
+        <div style="max-width:350px; margin:25px auto">
+            <canvas id="budgetChart"></canvas>
+        </div>
+        <div id="budgetStatus" class="result-box">
+            Enter your budget to see your status.
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-heading">
+        <h2>Saving <span class="gradient-text">Tips</span></h2>
+        <p>Small financial habits can help you reach your goals.</p>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3>Set a Goal</h3>
+            <p>Choose a realistic monthly savings target and track your progress.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧾</div>
+            <h3>Track Expenses</h3>
+            <p>Record your spending so you can identify where your money goes.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌱</div>
+            <h3>Build Savings</h3>
+            <p>Save regularly when your income and essential expenses allow it.</p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>© 2026 <span>Hoorab Finance</span> | Smart Financial Planning</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const budgetForm = document.getElementById("budgetForm");
+const incomeInput = document.getElementById("incomeInput");
+const expenseInput = document.getElementById("expenseInput");
+const goalInput = document.getElementById("goalInput");
+const budgetMessage = document.getElementById("budgetMessage");
+const budgetStatus = document.getElementById("budgetStatus");
+
+incomeInput.value = localStorage.getItem("financeIncome") || "";
+expenseInput.value = localStorage.getItem("financeExpenses") || "";
+goalInput.value = localStorage.getItem("financeGoal") || "";
+
+let budgetChart;
+
+function updateBudget() {
+    const income = Number(localStorage.getItem("financeIncome")) || 0;
+    const expenses = Number(localStorage.getItem("financeExpenses")) || 0;
+    const goal = Number(localStorage.getItem("financeGoal")) || 0;
+    const balance = income - expenses;
+    const savings = Math.max(0, balance);
+
+    document.getElementById("totalIncome").textContent =
+        "Rs. " + income.toLocaleString();
+    document.getElementById("totalExpenses").textContent =
+        "Rs. " + expenses.toLocaleString();
+    document.getElementById("availableBalance").textContent =
+        "Rs. " + balance.toLocaleString();
+    document.getElementById("goalDisplay").textContent =
+        "Rs. " + goal.toLocaleString();
+
+    if (income <= 0) {
+        budgetStatus.textContent = "Enter your monthly income to begin.";
+    } else if (expenses > income) {
+        budgetStatus.textContent =
+            "Warning: Your expenses exceed your income by Rs. " +
+            (expenses - income).toLocaleString() + ".";
+        budgetStatus.style.color = "#ff7777";
+    } else if (goal > balance) {
+        budgetStatus.textContent =
+            "Your savings goal is higher than your remaining balance. Adjust your goal or budget.";
+        budgetStatus.style.color = "#ffca70";
+    } else {
+        budgetStatus.textContent =
+            "Your budget is within your income. Keep tracking your spending!";
+        budgetStatus.style.color = "#00dda8";
+    }
+
+    const chartData = {
+        labels: ["Expenses", "Available Savings"],
+        datasets: [{
+            data: [Math.min(expenses, income), savings],
+            backgroundColor: ["#3984ff", "#00dda8"],
+            borderWidth: 0
+        }]
+    };
+
+    if (budgetChart) {
+        budgetChart.data = chartData;
+        budgetChart.update();
+    } else {
+        budgetChart = new Chart(document.getElementById("budgetChart"), {
+            type: "doughnut",
+            data: chartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: "#f5f8ff" }
+                    }
+                }
+            }
+        });
+    }
+}
+
+budgetForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const income = Number(incomeInput.value);
+    const expenses = Number(expenseInput.value);
+    const goal = Number(goalInput.value);
+
+    if (income < 0 || expenses < 0 || goal < 0) {
+        budgetMessage.textContent = "Please enter valid amounts.";
+        return;
+    }
+
+    localStorage.setItem("financeIncome", income);
+    localStorage.setItem("financeExpenses", expenses);
+    localStorage.setItem("financeGoal", goal);
+
+    budgetMessage.textContent = "Budget saved successfully!";
+    budgetMessage.style.color = "#00dda8";
+
+    updateBudget();
+});
+
+updateBudget();
+</script>
+
+</body>
+</html>

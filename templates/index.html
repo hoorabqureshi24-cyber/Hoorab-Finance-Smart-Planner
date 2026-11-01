@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoorab Finance | Smart Planner</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <header class="topbar">
+        <div class="navbar">
+
+            <!-- HOORAB FINANCE BRAND -->
+            <a href="/" class="brand">
+
+                <span class="brand-icon">
+    <img src="{{ url_for('static', filename='images/h (1).png') }}"
+         alt="Hoorab Finance Logo"
+         class="brand-logo">
+</span>
+                <span class="brand-name">
+                    Hoorab <b>Finance</b>
+                    <small>Smart Planner</small>
+                </span>
+
+            </a>
+
+            <nav class="nav-links">
+                <a class="active" href="/">⌂ Home</a>
+                <a href="{{ url_for('dashboard') }}">▦ Dashboard</a>
+                <a href="{{ url_for('budget') }}">♙ Budget &amp; Saving</a>
+                <a href="{{ url_for('business') }}">▣ Business Planner</a>
+                <a href="{{ url_for('simulator') }}">◈ Simulator</a>
+                <a href="{{ url_for('voice') }}">🎙 Voice Assistant</a>
+            </nav>
+
+        </div>
+    </header>
+
+
+    <main>
+
+        <!-- HERO SECTION -->
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <div class="eyebrow">
+                    <span class="online-dot"></span>
+                    WELCOME TO HOORAB FINANCE
+                </div>
+
+                <h1>
+                    Your Smart Partner<br>
+                    in <span>Financial Planning</span>
+                </h1>
+
+                <p>
+                    Manage your money, plan your future and achieve
+                    your financial goals with smart budgeting,
+                    savings tools and your personal finance assistant.
+                </p>
+
+                <div class="hero-buttons">
+                    <a href="/register" class="btn-primary">
+                        Create Account →
+                    </a>
+
+                    <a href="{{ url_for('budget') }}"
+                       class="btn btn-secondary">
+                        Plan My Budget
+                    </a>
+                </div>
+
+                <!-- THREE FEATURE HIGHLIGHTS -->
+                <div class="hero-stats">
+
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="8" width="18" height="13" rx="2"/>
+                                <path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3"/>
+                                <path d="M3 13h18"/>
+                                <path d="M10 13v2h4v-2"/>
+                            </svg>
+                        </div>
+                        <span>Smart Money<br>Management</span>
+                    </div>
+
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 21h18"/>
+                                <rect x="5" y="12" width="4" height="9" rx="1"/>
+                                <rect x="11" y="7" width="4" height="14" rx="1"/>
+                                <rect x="17" y="3" width="4" height="18" rx="1"/>
+                            </svg>
+                        </div>
+                        <span>Easy Budget<br>Tracking</span>
+                    </div>
+
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="8" width="16" height="12" rx="3"/>
+                                <path d="M12 4v4"/>
+                                <path d="M9 13h.01M15 13h.01"/>
+                                <path d="M9 17h6"/>
+                                <path d="M2 12h2M20 12h2"/>
+                                <path d="M8 5 6 3M16 5l2-2"/>
+                            </svg>
+                        </div>
+                        <span>AI Finance<br>Assistant</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ROBOT ASSISTANT -->
+            <div class="hero-visual">
+
+                <div class="robot-placeholder">
+                    <div class="robot-glow"></div>
+
+                    <div class="robot-face">
+                        <div class="robot-antenna"></div>
+
+                        <div class="robot-eyes">
+                            <span></span>
+                            <span></span>
+                        </div>
+
+                        <div class="robot-smile"></div>
+                    </div>
+
+                    <div class="robot-body">
+                        <div class="robot-body-light"></div>
+                    </div>
+                </div>
+
+                <div class="assistant-card">
+
+                    <div class="assistant-heading">
+                        <span class="online-dot"></span>
+                        <strong>Hoorab AI Assistant</strong>
+                    </div>
+
+                    <p>
+                        Hi! I'm your finance assistant.
+                        How can I help you today?
+                    </p>
+
+                    <button type="button" class="quick-action"
+                            data-message="Help me plan my budget">
+                        ♙ &nbsp; Plan my budget
+                    </button>
+
+                    <button type="button" class="quick-action"
+                            data-message="Help me track my expenses">
+                        ▦ &nbsp; Track my expenses
+                    </button>
+
+                    <button type="button" class="quick-action"
+                            data-message="I want to use voice commands">
+                        🎙 &nbsp; Voice commands
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- FINANCIAL TOOLKIT -->
+        <section class="features" id="features">
+
+            <div class="section-heading">
+
+                <div class="eyebrow">YOUR MONEY, YOUR FUTURE</div>
+
+                <h2>
+                    <span>Your Financial Toolkit</span>
+                </h2>
+
+                <p>
+                    Everything you need to manage your finances
+                    in one smart place.
+                </p>
+
+            </div>
+
+            <div class="feature-grid">
+
+                <article class="feature-card blue-card">
+                    <div class="feature-icon">▦</div>
+                    <h3>Finance Dashboard</h3>
+                    <p>
+                        Monitor your income, expenses, balance
+                        and financial progress with charts.
+                    </p>
+                    <a href="{{ url_for('dashboard') }}">
+                        Open Dashboard →
+                    </a>
+                </article>
+
+                <article class="feature-card green-card">
+                    <div class="feature-icon">♙</div>
+                    <h3>Budget &amp; Saving</h3>
+                    <p>
+                        Set a monthly budget, track spending
+                        and work towards your savings goals.
+                    </p>
+                    <a href="{{ url_for('budget') }}">
+                        Manage Budget →
+                    </a>
+                </article>
+
+                <article class="feature-card purple-card">
+                    <div class="feature-icon">🎙</div>
+                    <h3>AI Voice Assistant</h3>
+                    <p>
+                        Ask finance questions using text
+                        or microphone voice input.
+                    </p>
+                    <a href="{{ url_for('voice') }}">
+                        Open Assistant →
+                    </a>
+                </article>
+
+                <article class="feature-card cyan-card">
+                    <div class="feature-icon">▣</div>
+                    <h3>Business Planner</h3>
+                    <p>
+                        Estimate startup costs, organize
+                        business expenses and calculate profit.
+                    </p>
+                    <a href="{{ url_for('business') }}">
+                        Plan Business →
+                    </a>
+                </article>
+
+                <article class="feature-card blue-card">
+                    <div class="feature-icon">◈</div>
+                    <h3>Finance Simulator</h3>
+                    <p>
+                        Explore spending scenarios and see
+                        how saving decisions affect your balance.
+                    </p>
+                    <a href="{{ url_for('simulator') }}">
+                        Try Simulator →
+                    </a>
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- CALL TO ACTION -->
+        <section class="cta-section">
+
+            <div>
+                <h2>Take Control of Your Finances</h2>
+
+                <p>
+                    Start planning today and make smarter
+                    financial decisions for tomorrow.
+                </p>
+            </div>
+
+            <a href="{{ url_for('dashboard') }}" class="btn">
+                Get Started →
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <!-- FLOATING CHATBOT -->
+    <div class="chat-widget">
+
+        <button type="button"
+                id="chatToggle"
+                class="chat-toggle"
+                aria-label="Open finance assistant">
+            ✦
+        </button>
+
+        <section class="chat-window" id="chatWindow" hidden>
+
+            <div class="chat-header">
+                <div>
+                    <strong>Hoorab AI Assistant</strong>
+                    <p>Your Finance Helper</p>
+                </div>
+
+                <button type="button"
+                        id="closeChat"
+                        aria-label="Close chat">×</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message">
+                    Welcome to Hoorab Finance!
+                    Ask me about budgeting, saving or expenses.
+                </div>
+            </div>
+
+            <form id="chatForm" class="chat-input">
+
+                <input type="text"
+                       id="chatInput"
+                       placeholder="Type your message..."
+                       autocomplete="off"
+                       required>
+
+                <button type="button"
+                        id="micButton"
+                        aria-label="Use microphone">🎙</button>
+
+                <button type="submit"
+                        aria-label="Send message">➤</button>
+
+            </form>
+
+            <p id="voiceStatus" class="voice-status"></p>
+
+        </section>
+
+    </div>
+
+
+    <!-- FOOTER -->
+    <footer>
+        <p>Hoorab Finance — Smart Finance Planner</p>
+        <p>Plan smarter. Save better. Build your future.</p>
+        <p>© 2026 Hoorab Finance. All rights reserved.</p>
+    </footer>
+
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

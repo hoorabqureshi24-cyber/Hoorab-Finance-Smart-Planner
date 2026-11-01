@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Simulator | Hoorab Finance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="logo" href="/">Hoorab <span>Finance</span></a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/budget">Budget & Saving</a>
+        <a href="/business">Business Planner</a>
+        <a href="/simulator">Simulator</a>
+        <a href="/voice">Voice Assistant</a>
+    </div>
+</nav>
+
+<header class="page-header">
+    <span class="eyebrow">SMART FINANCIAL SIMULATION</span>
+    <h1>Budget <span class="gradient-text">Simulator</span></h1>
+    <p>Test different spending plans before deciding on your budget.</p>
+</header>
+
+<section class="stats-grid">
+    <div class="stat-card">
+        <p>Planned Budget</p>
+        <h2 id="budgetDisplay">Rs. 0</h2>
+    </div>
+    <div class="stat-card">
+        <p>Planned Expenses</p>
+        <h2 id="expenseDisplay">Rs. 0</h2>
+    </div>
+    <div class="stat-card">
+        <p>Remaining Amount</p>
+        <h2 id="remainingDisplay">Rs. 0</h2>
+    </div>
+    <div class="stat-card">
+        <p>Budget Status</p>
+        <h2 id="statusDisplay">Not Set</h2>
+    </div>
+</section>
+
+<section class="dashboard-grid">
+    <div class="form-card">
+        <h2>⚙️ Run Your Simulation</h2>
+        <p style="color:#a8bad5; margin-bottom:20px">
+            Enter your budget and estimated expenses.
+        </p>
+
+        <form id="simulatorForm">
+            <div class="form-group">
+                <label for="simBudget">Available Budget (Rs.)</label>
+                <input type="number" id="simBudget"
+                       min="0" step="any" required>
+            </div>
+
+            <div class="form-group">
+                <label for="simExpenses">Expected Expenses (Rs.)</label>
+                <input type="number" id="simExpenses"
+                       min="0" step="any" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Run Simulation
+            </button>
+        </form>
+
+        <div id="simResult" class="result-box" role="status">
+            Enter amounts to see your budget simulation.
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>📊 Budget Comparison</h2>
+        <p>The graph changes according to your results.</p>
+        <div style="margin-top:25px">
+            <canvas id="simChart"></canvas>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-heading">
+        <h2>Try These <span class="gradient-text">Scenarios</span></h2>
+        <p>Choose a sample scenario to test the simulator.</p>
+    </div>
+
+    <div class="features-grid">
+        <button type="button" class="feature-card scenario"
+                data-budget="50000" data-expenses="30000">
+            <div class="feature-icon">🟢</div>
+            <h3>Safe Budget</h3>
+            <p>Budget Rs. 50,000 with expenses of Rs. 30,000.</p>
+            <span class="feature-link">Try Scenario →</span>
+        </button>
+
+        <button type="button" class="feature-card scenario"
+                data-budget="30000" data-expenses="30000">
+            <div class="feature-icon">🟡</div>
+            <h3>Full Budget</h3>
+            <p>Budget Rs. 30,000 with expenses of Rs. 30,000.</p>
+            <span class="feature-link">Try Scenario →</span>
+        </button>
+
+        <button type="button" class="feature-card scenario"
+                data-budget="20000" data-expenses="28000">
+            <div class="feature-icon">🔴</div>
+            <h3>Over Budget</h3>
+            <p>Budget Rs. 20,000 with expenses of Rs. 28,000.</p>
+            <span class="feature-link">Try Scenario →</span>
+        </button>
+    </div>
+</section>
+
+<footer>
+    <p>© 2026 <span>Hoorab Finance</span> | Smart Financial Planning</p>
+</footer>
+
+<script>
+const simulatorForm = document.getElementById("simulatorForm");
+const simBudget = document.getElementById("simBudget");
+const simExpenses = document.getElementById("simExpenses");
+const simResult = document.getElementById("simResult");
+
+let simChart;
+
+function runSimulation(budget, expenses) {
+    const remaining = budget - expenses;
+    let status;
+    let message;
+    let color;
+
+    if (expenses > budget) {
+        status = "Exceeded";
+        message = "⚠️ Warning! Expenses exceed your budget by Rs. " +
+            (expenses - budget).toLocaleString() + ". Reduce spending.";
+        color = "#ff5555";
+    } else if (expenses === budget) {
+        status = "Fully Used";
+        message = "⚠️ Your entire budget will be used. Nothing remains.";
+        color = "#ffbd4a";
+    } else {
+        status = "Within Limit";
+        message = "✓ Good! You will have Rs. " +
+            remaining.toLocaleString() + " remaining.";
+        color = "#00dda8";
+    }
+
+    document.getElementById("budgetDisplay").textContent =
+        "Rs. " + budget.toLocaleString();
+
+    document.getElementById("expenseDisplay").textContent =
+        "Rs. " + expenses.toLocaleString();
+
+    document.getElementById("remainingDisplay").textContent =
+        "Rs. " + remaining.toLocaleString();
+
+    const statusDisplay = document.getElementById("statusDisplay");
+    statusDisplay.textContent = status;
+    statusDisplay.style.color = color;
+
+    simResult.textContent = message;
+    simResult.style.color = color;
+    simResult.style.borderColor = color;
+
+    const chartData = {
+        labels: ["Budget", "Expenses", "Remaining"],
+        datasets: [{
+            label: "Amount (Rs.)",
+            data: [budget, expenses, Math.max(0, remaining)],
+            backgroundColor: [
+                "#3984ff",
+                expenses > budget ? "#ff5555" :
+                    expenses === budget ? "#ffbd4a" : "#00dda8",
+                remaining < 0 ? "#ff5555" : "#9060ff"
+            ],
+            borderRadius: 8
+        }]
+    };
+
+    if (simChart) {
+        simChart.data = chartData;
+        simChart.update();
+    } else {
+        simChart = new Chart(document.getElementById("simChart"), {
+            type: "bar",
+            data: chartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: "#f5f8ff" }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: "#a8bad5" },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: "#a8bad5" }
+                    }
+                }
+            }
+        });
+    }
+}
+
+simulatorForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const budget = Number(simBudget.value);
+    const expenses = Number(simExpenses.value);
+
+    if (!Number.isFinite(budget) || !Number.isFinite(expenses) ||
+        budget < 0 || expenses < 0) {
+        simResult.textContent = "Please enter valid amounts.";
+        return;
+    }
+
+    runSimulation(budget, expenses);
+});
+
+document.querySelectorAll(".scenario").forEach(function(button) {
+    button.addEventListener("click", function() {
+        simBudget.value = button.dataset.budget;
+        simExpenses.value = button.dataset.expenses;
+
+        runSimulation(
+            Number(button.dataset.budget),
+            Number(button.dataset.expenses)
+        );
+    });
+});
+</script>
+
+</body>
+</html>
