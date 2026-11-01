@@ -24,8 +24,13 @@ app.secret_key = os.getenv(
     "FLASK_SECRET_KEY",
     "local-development-key-change-before-deployment"
 )
+import os
 
-DATABASE = Path(__file__).resolve().parent / "finance.db"
+# Vercel par writable folder sirf /tmp hai
+if os.environ.get("VERCEL"):
+    DATABASE = Path("/tmp/finance.db")
+else:
+    DATABASE = Path(__file__).resolve().parent / "finance.db"
 
 
 # ---------------- DATABASE CONNECTION ----------------
@@ -158,8 +163,6 @@ def login_required(view):
 def home():
     return render_template("index.html")
 
-
-# ---------------- REGISTER ----------------
 
 # ---------------- REGISTER ----------------
 
