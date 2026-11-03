@@ -25,17 +25,25 @@ app.secret_key = os.getenv(
 
 # ---------------- SQL SERVER CONNECTION ----------------
 
+import os
+import sqlite3
+
 def get_db():
-
-    connection = pyodbc.connect(
-        "DRIVER={ODBC Driver 13 for SQL Server};"
-        "SERVER=LAPTOP-K98B7O35;"
-        "DATABASE=HoorabFinanceDB;"
-        "Trusted_Connection=yes;"
-    )
-
-    return connection
-
+    # Agar Vercel par hai to sqlite use karo
+    if os.environ.get('VERCEL'):
+        conn = sqlite3.connect('/tmp/hoorab.db')
+        conn.row_factory = sqlite3.Row
+        return conn
+    else:
+        # Laptop par aapka SQL Server chalega
+        import pyodbc
+        connection = pyodbc.connect(
+            "DRIVER={ODBC Driver 13 for SQL Server};"
+            "SERVER=LAPTOP-K9887035;"
+            "DATABASE=HoorabFinanceDB;"
+            "Trusted_Connection=yes;"
+        )
+        return connection
 
 def to_number(value):
     if isinstance(value, Decimal):
