@@ -112,46 +112,49 @@ def home():
 
 
 # ---------------- REGISTER ----------------
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "POST":
 
-        username = request.form.get(
-            "username", ""
-        ).strip()
-
-        email = request.form.get(
-            "email", ""
-        ).strip().lower()
-
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         if not username or not email or not password:
-
             flash("Please fill in all fields.", "error")
             return render_template("register.html")
 
         if len(password) < 8:
-
-            flash(
-                "Password must be at least 8 characters.",
-                "error"
-            )
-
+            flash("Password must be at least 8 characters.", "error")
             return render_template("register.html")
 
         connection = None
         cursor = None
 
         try:
-
             connection = get_db()
             cursor = connection.cursor()
 
+            # Check whether email already exists
+            cursor.execute(
+                "SELECT UserID FROM dbo.Users WHERE Email = ?",
+                (email,)
+            )
+
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                flash(
+                    "This email is already registered. Please log in.",
+                    "error"
+                )
+                return render_template("register.html")
+
+            # Hash password
             password_hash = generate_password_hash(password)
 
+            # Insert new user
             cursor.execute(
                 """
                 INSERT INTO dbo.Users
@@ -161,113 +164,36 @@ def register():
                 (username, email, password_hash)
             )
 
-            cursor.execute(
-                "SELECT CAST(SCOPE_IDENTITY() AS INT)"
-            )
-
+            cursor.execute("SELECT CAST(SCOPE_IDENTITY() AS INT)")
             new_user_id = cursor.fetchone()[0]
 
             connection.commit()
 
             session.clear()
-
             session["user_id"] = new_user_id
             session["username"] = username
             session.permanent = True
 
             return redirect(url_for("dashboard"))
 
-        except pyodbc.IntegrityError:
-
+        except pyodbc.IntegrityError as e:
             if connection:
                 connection.rollback()
 
-            flash(
-                "This email is already registered. Please log in.",
-                "error"
-            )
+            app.logger.exception("Registration integrity error: %s", e)
+            flash("Database constraint error. Check the Terminal.", "error")
 
-        except pyodbc.Error:
-
+        except pyodbc.Error as e:
             if connection:
                 connection.rollback()
 
-            app.logger.exception("Registration database error")
-
-            flash(
-                "Registration failed. Check the Terminal.",
-                "error"
-            )
+            app.logger.exception("Registration database error: %s", e)
+            flash("Database error. Check the Terminal.", "error")
 
         finally:
-
             close_db(connection, cursor)
 
     return render_template("register.html")
-
-
-# ---------------- LOGIN ----------------
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-
-    if request.method == "POST":
-
-        email = request.form.get(
-            "email", ""
-        ).strip().lower()
-
-        password = request.form.get("password", "")
-
-        connection = None
-        cursor = None
-
-        try:
-
-            connection = get_db()
-            cursor = connection.cursor()
-
-            cursor.execute(
-                """
-                SELECT UserID, FullName, Email, PasswordHash
-                FROM dbo.Users
-                WHERE LOWER(LTRIM(RTRIM(Email))) = ?
-                """,
-                (email,)
-            )
-
-            user = cursor.fetchone()
-
-            if user and check_password_hash(
-                user[3], password
-            ):
-
-                session.clear()
-
-                session["user_id"] = user[0]
-                session["username"] = user[1]
-                session.permanent = True
-
-                return redirect(url_for("dashboard"))
-
-            flash("Invalid email or password.", "error")
-
-        except pyodbc.Error:
-
-            app.logger.exception("Login database error")
-
-            flash(
-                "Database error. Check the Terminal.",
-                "error"
-            )
-
-        finally:
-
-            close_db(connection, cursor)
-
-    return render_template("login.html")
-
-
 # ---------------- LOGOUT ----------------
 
 @app.route("/logout")
