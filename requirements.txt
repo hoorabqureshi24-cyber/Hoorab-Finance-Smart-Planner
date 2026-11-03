@@ -1,4 +1,4 @@
 Flask
-Flask-SQLAIchemy
+Flask-SQLAlchemy
 Werkzeug
 pyodbc
