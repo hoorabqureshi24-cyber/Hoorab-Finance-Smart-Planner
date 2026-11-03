@@ -1,6 +1,5 @@
 import os
-import sqlite3
-from pathlib import Path
+import pyodbc
 from functools import wraps
 from datetime import date
 from decimal import Decimal
@@ -24,469 +23,934 @@ app.secret_key = os.getenv(
     "local-development-key-change-before-deployment"
 )
 
-# Vercel par writable folder sirf /tmp hai
-if os.environ.get("VERCEL"):
-    DATABASE = Path("/tmp/finance.db")
-else:
-    DATABASE = Path(__file__).resolve().parent / "finance.db"
-
-# ---------------- DATABASE CONNECTION ----------------
+# ---------------- SQL SERVER CONNECTION ----------------
 
 def get_db():
-    connection = sqlite3.connect(str(DATABASE))
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA foreign_keys = ON")
+
+    connection = pyodbc.connect(
+        "DRIVER={ODBC Driver 13 for SQL Server};"
+        "SERVER=LAPTOP-K98B7O35;"
+        "DATABASE=HoorabFinanceDB;"
+        "Trusted_Connection=yes;"
+    )
+
     return connection
 
-def close_db(connection=None, cursor=None):
-    if cursor is not None:
-        cursor.close()
-    if connection is not None:
-        connection.close()
-
-# ---------------- DATABASE INITIALIZATION ----------------
-
-def initialize_database():
-    DATABASE.parent.mkdir(parents=True, exist_ok=True)
-    connection = None
-    try:
-        connection = get_db()
-        connection.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                user_password TEXT NOT NULL,
-                user_created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS monthly_budgets (
-                budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                budget_month TEXT NOT NULL,
-                total_budget REAL DEFAULT 0,
-                used_amount REAL DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-                UNIQUE(user_id, budget_month)
-            );
-
-            CREATE TABLE IF NOT EXISTS transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                transaction_type TEXT NOT NULL,
-                amount REAL NOT NULL,
-                category TEXT NOT NULL,
-                description TEXT,
-                transaction_date TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-            );
-        """)
-        connection.commit()
-        print("DATABASE PATH:", DATABASE)
-        print("DATABASE EXISTS:", DATABASE.exists())
-    except sqlite3.Error:
-        app.logger.exception("Database initialization failed")
-        raise
-    finally:
-        if connection is not None:
-            connection.close()
 
 def to_number(value):
     if isinstance(value, Decimal):
         return float(value)
     return float(value or 0)
 
-# Create database tables when Flask starts.
-initialize_database()
+
+def close_db(connection=None, cursor=None):
+
+    if cursor is not None:
+        cursor.close()
+
+    if connection is not None:
+        connection.close()
+
+
+# ---------------- DATABASE CONNECTION TEST ----------------
+
+def test_database():
+
+    connection = None
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT DB_NAME()")
+        result = cursor.fetchone()
+
+        print("DATABASE CONNECTED SUCCESSFULLY!")
+        print("DATABASE NAME:", result[0])
+
+        cursor.close()
+
+    except pyodbc.Error:
+        app.logger.exception("SQL Server connection failed")
+        raise
+
+    finally:
+        if connection:
+            connection.close()
+
+
+test_database()
+
 
 # ---------------- LOGIN PROTECTION ----------------
 
 def login_required(view):
+
     @wraps(view)
     def wrapped_view(*args, **kwargs):
+
         if "user_id" not in session:
+
             if request.path.startswith("/api/"):
-                return jsonify({"error": "Please log in first."}), 401
+                return jsonify({
+                    "error": "Please log in first."
+                }), 401
+
             return redirect(url_for("login"))
+
         return view(*args, **kwargs)
+
     return wrapped_view
+
 
 # ---------------- HOME ----------------
 
 @app.route("/")
 def home():
+
     return render_template("index.html")
+
 
 # ---------------- REGISTER ----------------
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip().lower()
+
+        username = request.form.get(
+            "username", ""
+        ).strip()
+
+        email = request.form.get(
+            "email", ""
+        ).strip().lower()
+
         password = request.form.get("password", "")
 
         if not username or not email or not password:
+
             flash("Please fill in all fields.", "error")
             return render_template("register.html")
 
         if len(password) < 8:
-            flash("Password must be at least 8 characters.", "error")
+
+            flash(
+                "Password must be at least 8 characters.",
+                "error"
+            )
+
             return render_template("register.html")
 
         connection = None
         cursor = None
+
         try:
+
             connection = get_db()
             cursor = connection.cursor()
+
             password_hash = generate_password_hash(password)
 
             cursor.execute(
                 """
-                INSERT INTO users (username, email, user_password)
-                VALUES (?, ?, ?)
+                INSERT INTO dbo.Users
+                    (FullName, Email, PasswordHash, CreatedAt)
+                VALUES (?, ?, ?, GETDATE())
                 """,
                 (username, email, password_hash)
             )
-            new_user_id = cursor.lastrowid
+
+            cursor.execute(
+                "SELECT CAST(SCOPE_IDENTITY() AS INT)"
+            )
+
+            new_user_id = cursor.fetchone()[0]
+
             connection.commit()
 
             session.clear()
+
             session["user_id"] = new_user_id
             session["username"] = username
+            session.permanent = True
+
             return redirect(url_for("dashboard"))
 
-        except sqlite3.IntegrityError:
-            if connection:
-                connection.rollback()
-            flash("This email is already registered. Please log in.", "error")
+        except pyodbc.IntegrityError:
 
-        except sqlite3.Error:
             if connection:
                 connection.rollback()
+
+            flash(
+                "This email is already registered. Please log in.",
+                "error"
+            )
+
+        except pyodbc.Error:
+
+            if connection:
+                connection.rollback()
+
             app.logger.exception("Registration database error")
-            flash("Registration failed. Check the Terminal.", "error")
+
+            flash(
+                "Registration failed. Check the Terminal.",
+                "error"
+            )
 
         finally:
+
             close_db(connection, cursor)
 
     return render_template("register.html")
+
 
 # ---------------- LOGIN ----------------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+
+        email = request.form.get(
+            "email", ""
+        ).strip().lower()
+
         password = request.form.get("password", "")
 
         connection = None
         cursor = None
+
         try:
+
             connection = get_db()
             cursor = connection.cursor()
 
             cursor.execute(
                 """
-                SELECT user_id, username, email, user_password
-                FROM users
-                WHERE LOWER(TRIM(email)) = ?
+                SELECT UserID, FullName, Email, PasswordHash
+                FROM dbo.Users
+                WHERE LOWER(LTRIM(RTRIM(Email))) = ?
                 """,
                 (email,)
             )
-            user = cursor.fetchone()
-            password_ok = False
-            if user:
-                password_ok = check_password_hash(
-                    user["user_password"], password
-                )
 
-            if user and password_ok:
+            user = cursor.fetchone()
+
+            if user and check_password_hash(
+                user[3], password
+            ):
+
                 session.clear()
-                session["user_id"] = user["user_id"]
-                session["username"] = user["username"]
+
+                session["user_id"] = user[0]
+                session["username"] = user[1]
                 session.permanent = True
+
                 return redirect(url_for("dashboard"))
 
             flash("Invalid email or password.", "error")
 
-        except sqlite3.Error:
+        except pyodbc.Error:
+
             app.logger.exception("Login database error")
-            flash("Database error. Check the Terminal.", "error")
+
+            flash(
+                "Database error. Check the Terminal.",
+                "error"
+            )
 
         finally:
+
             close_db(connection, cursor)
 
     return render_template("login.html")
+
 
 # ---------------- LOGOUT ----------------
 
 @app.route("/logout")
 @login_required
 def logout():
+
     session.clear()
+
     return redirect(url_for("home"))
+
 
 # ---------------- PROTECTED PAGES ----------------
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
+
     return render_template("dashboard.html")
+
 
 @app.route("/budget")
 @login_required
 def budget():
+
     return render_template("budget.html")
+
 
 @app.route("/business")
 @login_required
 def business():
+
     return render_template("business.html")
+
 
 @app.route("/simulator")
 @login_required
 def simulator():
+
     return render_template("simulator.html")
+
 
 @app.route("/voice")
 @login_required
 def voice():
+
     return render_template("voice.html")
+
 
 # ---------------- DASHBOARD SUMMARY ----------------
 
 @app.route("/api/dashboard-summary")
 @login_required
 def dashboard_summary():
+
     user_id = session["user_id"]
-    month = date.today().replace(day=1).isoformat()
+
+    today = date.today()
+
+    month_start = today.replace(day=1)
+
+    if today.month == 12:
+        next_month = date(today.year + 1, 1, 1)
+    else:
+        next_month = date(today.year, today.month + 1, 1)
+
     connection = None
     cursor = None
+
     try:
+
         connection = get_db()
         cursor = connection.cursor()
+
         cursor.execute(
             """
             SELECT
-                COALESCE(SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END), 0) AS income,
-                COALESCE(SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
-            FROM transactions
-            WHERE user_id = ? AND transaction_date >= ?
+                COALESCE(SUM(
+                    CASE WHEN TransactionType = 'income'
+                    THEN Amount ELSE 0 END
+                ), 0),
+
+                COALESCE(SUM(
+                    CASE WHEN TransactionType = 'expense'
+                    THEN Amount ELSE 0 END
+                ), 0)
+
+            FROM dbo.Transactions
+
+            WHERE UserID = ?
+            AND TransactionDate >= ?
+            AND TransactionDate < ?
             """,
-            (user_id, month)
+            (user_id, month_start, next_month)
         )
+
         result = cursor.fetchone()
-        income = to_number(result["income"])
-        expenses = to_number(result["expenses"])
+
+        income = to_number(result[0])
+        expenses = to_number(result[1])
 
         cursor.execute(
             """
-            SELECT total_budget, used_amount
-            FROM monthly_budgets
-            WHERE user_id = ? AND budget_month = ?
+            SELECT MonthlyBudget
+            FROM dbo.Budgets
+            WHERE UserID = ? AND [Month] = ? AND [Year] = ?
             """,
-            (user_id, month)
+            (user_id, today.month, today.year)
         )
+
         budget_record = cursor.fetchone()
-        if budget_record:
-            income = to_number(budget_record["total_budget"])
-            expenses = to_number(budget_record["used_amount"])
+
+        monthly_budget = (
+            to_number(budget_record[0])
+            if budget_record else 0
+        )
 
         return jsonify({
+
             "username": session.get("username", ""),
+
             "income": income,
+
             "expenses": expenses,
-            "savings": max(0, income - expenses),
-            "remaining": income - expenses,
-            "month": month
+
+            "budget": monthly_budget,
+
+            "savings": income - expenses,
+
+            "remaining": monthly_budget - expenses,
+
+            "month": month_start.isoformat()
+
         })
-    except sqlite3.Error:
+
+    except pyodbc.Error:
+
         app.logger.exception("Dashboard summary error")
-        return jsonify({"error": "Could not load dashboard data."}), 500
+
+        return jsonify({
+            "error": "Could not load dashboard data."
+        }), 500
+
     finally:
+
         close_db(connection, cursor)
+
 
 # ---------------- MONTHLY BUDGET ----------------
 
 @app.route("/api/monthly-budget", methods=["GET", "POST"])
 @login_required
 def monthly_budget():
+
     user_id = session["user_id"]
-    month_value = request.values.get("month", date.today().replace(day=1).isoformat())
-    try:
-        month = date.fromisoformat(month_value).replace(day=1).isoformat()
-    except ValueError:
-        return jsonify({"error": "Invalid month."}), 400
 
     connection = None
     cursor = None
+
     try:
+
+        if request.method == "POST":
+
+            data = request.get_json(silent=True) or {}
+
+            budget_value = data.get(
+                "monthly_budget",
+                data.get("budget", data.get("income", 0))
+            )
+
+            try:
+                budget_amount = float(budget_value)
+            except (TypeError, ValueError):
+                return jsonify({
+                    "error": "Enter a valid budget."
+                }), 400
+
+            if budget_amount < 0:
+                return jsonify({
+                    "error": "Budget cannot be negative."
+                }), 400
+
+            month_value = data.get(
+                "month", date.today().strftime("%Y-%m")
+            )
+
+        else:
+
+            month_value = request.args.get(
+                "month", date.today().strftime("%Y-%m")
+            )
+
+        try:
+
+            selected_month = date.fromisoformat(
+                month_value[:7] + "-01"
+            )
+
+        except ValueError:
+
+            return jsonify({
+                "error": "Invalid month."
+            }), 400
+
         connection = get_db()
         cursor = connection.cursor()
+
+        month = selected_month.month
+        year = selected_month.year
+
         if request.method == "POST":
-            data = request.get_json(silent=True) or {}
-            try:
-                income = float(data.get("income", 0))
-                expenses = float(data.get("expenses", 0))
-            except (TypeError, ValueError):
-                return jsonify({"error": "Enter valid amounts."}), 400
-            if income < 0 or expenses < 0:
-                return jsonify({"error": "Amounts cannot be negative."}), 400
 
             cursor.execute(
                 """
-                INSERT INTO monthly_budgets (user_id, budget_month, total_budget, used_amount)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(user_id, budget_month)
-                DO UPDATE SET total_budget = excluded.total_budget, used_amount = excluded.used_amount
+                SELECT BudgetID
+                FROM dbo.Budgets
+                WHERE UserID = ? AND [Month] = ? AND [Year] = ?
                 """,
-                (user_id, month, income, expenses)
+                (user_id, month, year)
             )
+
+            existing = cursor.fetchone()
+
+            if existing:
+
+                cursor.execute(
+                    """
+                    UPDATE dbo.Budgets
+                    SET MonthlyBudget = ?
+                    WHERE BudgetID = ?
+                    """,
+                    (budget_amount, existing[0])
+                )
+
+            else:
+
+                cursor.execute(
+                    """
+                    INSERT INTO dbo.Budgets
+                        (UserID, MonthlyBudget, [Month], [Year], CreatedAt)
+                    VALUES (?, ?, ?, ?, GETDATE())
+                    """,
+                    (user_id, budget_amount, month, year)
+                )
+
             connection.commit()
-            return jsonify({
-                "message": "Monthly record saved.",
-                "income": income, "expenses": expenses,
-                "remaining": income - expenses, "month": month
-            }), 201
+
+        # Get actual monthly income and expenses
+        if month == 12:
+            next_month = date(year + 1, 1, 1)
+        else:
+            next_month = date(year, month + 1, 1)
 
         cursor.execute(
-            "SELECT total_budget, used_amount FROM monthly_budgets WHERE user_id = ? AND budget_month = ?",
-            (user_id, month)
+            """
+            SELECT
+                COALESCE(SUM(
+                    CASE WHEN TransactionType = 'income'
+                    THEN Amount ELSE 0 END
+                ), 0),
+
+                COALESCE(SUM(
+                    CASE WHEN TransactionType = 'expense'
+                    THEN Amount ELSE 0 END
+                ), 0)
+
+            FROM dbo.Transactions
+
+            WHERE UserID = ?
+            AND TransactionDate >= ?
+            AND TransactionDate < ?
+            """,
+            (user_id, selected_month, next_month)
         )
+
+        totals = cursor.fetchone()
+
+        income = to_number(totals[0])
+        expenses = to_number(totals[1])
+
+        cursor.execute(
+            """
+            SELECT MonthlyBudget
+            FROM dbo.Budgets
+            WHERE UserID = ? AND [Month] = ? AND [Year] = ?
+            """,
+            (user_id, month, year)
+        )
+
         record = cursor.fetchone()
-        if not record:
-            return jsonify({"month": month, "income": 0, "expenses": 0, "remaining": 0})
-        income = to_number(record["total_budget"])
-        expenses = to_number(record["used_amount"])
-        return jsonify({"month": month, "income": income, "expenses": expenses, "remaining": income - expenses})
-    except sqlite3.Error:
-        if connection: connection.rollback()
+
+        budget_amount = (
+            to_number(record[0]) if record else 0
+        )
+
+        return jsonify({
+
+            "month": selected_month.isoformat(),
+
+            "budget": budget_amount,
+
+            "income": income,
+
+            "expenses": expenses,
+
+            "remaining": budget_amount - expenses
+
+        }), 201 if request.method == "POST" else 200
+
+    except pyodbc.Error:
+
+        if connection:
+            connection.rollback()
+
         app.logger.exception("Monthly budget error")
-        return jsonify({"error": "Could not process monthly budget."}), 500
+
+        return jsonify({
+            "error": "Could not process monthly budget."
+        }), 500
+
     finally:
+
         close_db(connection, cursor)
+
 
 # ---------------- MONTHLY HISTORY ----------------
 
 @app.route("/api/monthly-history")
 @login_required
 def monthly_history():
+
     connection = None
     cursor = None
+
     try:
+
         connection = get_db()
         cursor = connection.cursor()
+
         cursor.execute(
-            "SELECT budget_month, total_budget, used_amount FROM monthly_budgets WHERE user_id = ? ORDER BY budget_month DESC",
+            """
+            SELECT
+                b.[Month],
+                b.[Year],
+                b.MonthlyBudget,
+
+                COALESCE(SUM(
+                    CASE WHEN t.TransactionType = 'income'
+                    THEN t.Amount ELSE 0 END
+                ), 0) AS Income,
+
+                COALESCE(SUM(
+                    CASE WHEN t.TransactionType = 'expense'
+                    THEN t.Amount ELSE 0 END
+                ), 0) AS Expenses
+
+            FROM dbo.Budgets b
+
+            LEFT JOIN dbo.Transactions t
+                ON b.UserID = t.UserID
+                AND MONTH(t.TransactionDate) = b.[Month]
+                AND YEAR(t.TransactionDate) = b.[Year]
+
+            WHERE b.UserID = ?
+
+            GROUP BY
+                b.[Month],
+                b.[Year],
+                b.MonthlyBudget
+
+            ORDER BY b.[Year] DESC, b.[Month] DESC
+            """,
             (session["user_id"],)
         )
+
         rows = cursor.fetchall()
+
         history = []
+
         for row in rows:
-            income = to_number(row["total_budget"])
-            expenses = to_number(row["used_amount"])
-            history.append({"month": row["budget_month"], "income": income, "expenses": expenses, "remaining": income - expenses})
-        return jsonify({"history": history})
-    except sqlite3.Error:
+
+            income = to_number(row[3])
+            expenses = to_number(row[4])
+            budget_amount = to_number(row[2])
+
+            history.append({
+
+                "month": f"{row[1]}-{row[0]:02d}",
+
+                "income": income,
+
+                "expenses": expenses,
+
+                "budget": budget_amount,
+
+                "remaining": budget_amount - expenses
+
+            })
+
+        return jsonify({
+            "history": history
+        })
+
+    except pyodbc.Error:
+
         app.logger.exception("Monthly history error")
-        return jsonify({"error": "Could not load monthly history."}), 500
+
+        return jsonify({
+            "error": "Could not load monthly history."
+        }), 500
+
     finally:
+
         close_db(connection, cursor)
+
 
 # ---------------- ADD TRANSACTION ----------------
 
 @app.route("/api/transactions", methods=["POST"])
 @login_required
 def add_transaction():
+
     data = request.get_json(silent=True) or {}
+
     try:
+
         amount = float(data.get("amount", 0))
+
     except (TypeError, ValueError):
-        return jsonify({"error": "Invalid amount."}), 400
 
-    category = str(data.get("category", "")).strip()
-    transaction_type = str(data.get("transaction_type", "")).strip().lower()
-    transaction_date = str(data.get("transaction_date", date.today().isoformat())).strip()
-    description = str(data.get("description", "")).strip()
+        return jsonify({
+            "error": "Invalid amount."
+        }), 400
 
-    if amount <= 0: return jsonify({"error": "Amount must be positive."}), 400
-    if not category: return jsonify({"error": "Category is required."}), 400
-    if transaction_type not in ("income", "expense"): return jsonify({"error": "Type must be income or expense."}), 400
+    category = str(
+        data.get("category", "")
+    ).strip()
+
+    transaction_type = str(
+        data.get("transaction_type", "")
+    ).strip().lower()
+
+    transaction_date = str(
+        data.get(
+            "transaction_date",
+            date.today().isoformat()
+        )
+    ).strip()
+
+    description = str(
+        data.get("description", "")
+    ).strip()
+
+    if amount <= 0:
+
+        return jsonify({
+            "error": "Amount must be positive."
+        }), 400
+
+    if not category:
+
+        return jsonify({
+            "error": "Category is required."
+        }), 400
+
+    if transaction_type not in ("income", "expense"):
+
+        return jsonify({
+            "error": "Type must be income or expense."
+        }), 400
+
     try:
-        date.fromisoformat(transaction_date)
+
+        transaction_date = date.fromisoformat(
+            transaction_date
+        )
+
     except ValueError:
-        return jsonify({"error": "Invalid date."}), 400
+
+        return jsonify({
+            "error": "Invalid date."
+        }), 400
 
     connection = None
     cursor = None
+
     try:
+
         connection = get_db()
         cursor = connection.cursor()
+
         cursor.execute(
-            "INSERT INTO transactions (user_id, transaction_type, amount, category, description, transaction_date) VALUES (?, ?, ?, ?, ?, ?)",
-            (session["user_id"], transaction_type, amount, category, description, transaction_date)
+            """
+            INSERT INTO dbo.Transactions
+            (
+                UserID,
+                TransactionType,
+                Amount,
+                Category,
+                Description,
+                TransactionDate
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                session["user_id"],
+                transaction_type,
+                amount,
+                category,
+                description,
+                transaction_date
+            )
         )
+
         connection.commit()
-        return jsonify({"message": "Transaction saved successfully."}), 201
-    except sqlite3.Error:
-        if connection: connection.rollback()
+
+        return jsonify({
+            "message": "Transaction saved successfully."
+        }), 201
+
+    except pyodbc.Error:
+
+        if connection:
+            connection.rollback()
+
         app.logger.exception("Transaction save error")
-        return jsonify({"error": "Could not save transaction."}), 500
+
+        return jsonify({
+            "error": "Could not save transaction."
+        }), 500
+
     finally:
+
         close_db(connection, cursor)
+
 
 # ---------------- PRIVATE TRANSACTION HISTORY ----------------
 
 @app.route("/api/history")
 @login_required
 def financial_history():
+
     connection = None
     cursor = None
+
     try:
+
         connection = get_db()
         cursor = connection.cursor()
+
         cursor.execute(
-            "SELECT transaction_id, amount, category, transaction_type, transaction_date, description FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC, transaction_id DESC",
+            """
+            SELECT
+                TransactionID,
+                Amount,
+                Category,
+                TransactionType,
+                TransactionDate,
+                Description
+
+            FROM dbo.Transactions
+
+            WHERE UserID = ?
+
+            ORDER BY TransactionDate DESC, TransactionID DESC
+            """,
             (session["user_id"],)
         )
+
         rows = cursor.fetchall()
-        transactions = [dict(row) for row in rows]
-        return jsonify({"transactions": transactions})
-    except sqlite3.Error:
+
+        transactions = []
+
+        for row in rows:
+
+            transactions.append({
+
+                "transaction_id": row[0],
+
+                "amount": to_number(row[1]),
+
+                "category": row[2],
+
+                "transaction_type": row[3],
+
+                "transaction_date": (
+                    row[4].isoformat()
+                    if row[4] else None
+                ),
+
+                "description": row[5]
+
+            })
+
+        return jsonify({
+            "transactions": transactions
+        })
+
+    except pyodbc.Error:
+
         app.logger.exception("Transaction history error")
-        return jsonify({"error": "Could not load transaction history."}), 500
+
+        return jsonify({
+            "error": "Could not load transaction history."
+        }), 500
+
     finally:
+
         close_db(connection, cursor)
+
 
 # ---------------- FINANCE ASSISTANT ----------------
 
 @app.route("/api/chat", methods=["POST"])
 @login_required
 def ai_chat():
-    data = request.get_json(silent=True) or {}
-    question = str(data.get("message", "")).strip().lower()
-    if not question: return jsonify({"error": "Please type a question."}), 400
-    if len(question) > 4000: return jsonify({"error": "Question is too long."}), 400
 
-    if any(word in question for word in ["hello", "hi", "salam", "assalam"]):
-        reply = "Hello! Welcome to Hoorab Finance Assistant. I can help with budgeting, saving and expenses."
-    elif any(word in question for word in ["budget", "monthly plan", "manage money"]):
-        reply = "Calculate your monthly income, list essential expenses, set a savings target and track your spending regularly."
-    elif any(word in question for word in ["save", "saving", "savings"]):
-        reply = "Set a realistic savings goal, record your expenses and save a manageable amount regularly."
-    elif any(word in question for word in ["expense", "spending", "spent"]):
-        reply = "Record expenses by date and category. Compare your spending with your monthly budget."
-    elif any(word in question for word in ["income", "salary", "earning"]):
-        reply = "Record your income, plan essential expenses first and then decide your savings target."
-    elif any(word in question for word in ["business", "profit", "sales"]):
-        reply = "Business profit is calculated by subtracting total costs from total revenue."
+    data = request.get_json(silent=True) or {}
+
+    question = str(
+        data.get("message", "")
+    ).strip().lower()
+
+    if not question:
+
+        return jsonify({
+            "error": "Please type a question."
+        }), 400
+
+    if len(question) > 4000:
+
+        return jsonify({
+            "error": "Question is too long."
+        }), 400
+
+    if any(word in question for word in [
+        "hello", "hi", "salam", "assalam"
+    ]):
+
+        reply = (
+            "Hello! Welcome to Hoorab Finance Assistant. "
+            "I can help with budgeting, saving and expenses."
+        )
+
+    elif any(word in question for word in [
+        "budget", "monthly plan", "manage money"
+    ]):
+
+        reply = (
+            "Calculate your monthly income, list essential "
+            "expenses, set a savings target and track your spending."
+        )
+
+    elif any(word in question for word in [
+        "save", "saving", "savings"
+    ]):
+
+        reply = (                                                                    
+            "Set a realistic savings goal, record your expenses "
+            "and save a manageable amount regularly."
+          )
+    elif any(word in question for word in [
+        "business", "profit", "sales"
+    ]):
+
+        reply = (
+            "Business profit is calculated by subtracting "
+            "total costs from total revenue."
+        )
+
     else:
-        reply = "I can help with budgeting, income, savings, expenses and business planning."
-    return jsonify({"reply": reply})
+
+        reply = (
+            "I can help with budgeting, income, savings, "
+            "expenses and business planning."
+        )
+
+    return jsonify({
+        "reply": reply
+    })
+
 
 # ---------------- RUN APPLICATION ----------------
+
 if __name__ == "__main__":
+
     app.run(debug=True)
