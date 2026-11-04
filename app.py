@@ -32,7 +32,7 @@ def get_db():
         host=os.getenv("MYSQL_HOST", "mysql-2f07378e-hoorab-finance.l.aivencloud.com"),
         port=int(os.getenv("MYSQL_PORT", "16301")),
         user=os.getenv("MYSQL_USER", "avnadmin"),
-        password=os.getenv("MYSQL_PASSWORD", "APNA_PASSWORD_YAHAN_LIKHENS"),
+        password=os.getenv("MYSQL_PASSWORD", "APNA_PASSWORD_YAHAN LIKHAN"),
         database=os.getenv("MYSQL_DB", "defaultdb"),
         cursorclass=pymysql.cursors.Cursor,
         autocommit=False
