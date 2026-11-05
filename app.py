@@ -75,7 +75,7 @@ def test_database():
         if connection:
             connection.close()
 
-test_database()
+# test_database()
 
 # ---------------- LOGIN PROTECTION ----------------
 
